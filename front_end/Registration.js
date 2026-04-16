@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://blood-bank-8szc.onrender.com/api';
+const API_BASE_URL = '/api';
 
 // Get auth token from localStorage
 function getAuthToken() {
@@ -30,7 +30,7 @@ async function submitStudentRegistration() {
     const token = getAuthToken();
     if (!token) {
         console.error("Please login first");
-        window.location.href = "/Login.html";
+        window.location.href = "/";
         return;
     }
 

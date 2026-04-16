@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 function getAuthToken() {
     return localStorage.getItem('authToken');
@@ -8,7 +8,7 @@ export async function addStudentInfo(s_name, s_age, s_id, s_email, s_phone_no, s
     const token = getAuthToken();
     if (!token) {
         alert('Please login first');
-        window.location.href = '/Login.html';
+        window.location.href = '/';
         return;
     }
 
@@ -50,7 +50,7 @@ export async function fetchStudentData() {
     const token = getAuthToken();
     if (!token) {
         alert('Please login first');
-        window.location.href = '/Login.html';
+        window.location.href = '/';
         return [];
     }
 

@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = '/api';
 
 // Get auth token from localStorage
 function getAuthToken() {
@@ -9,7 +9,7 @@ export async function getMatchingDonors(bloodGroup) {
     const token = getAuthToken();
     if (!token) {
         alert("Please login first");
-        window.location.href = "/Login.html";
+        window.location.href = "/";
         return [];
     }
 
