@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://blood-bank-8szc.onrender.com/api';
 
 // Get auth token from localStorage
 function getAuthToken() {

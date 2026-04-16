@@ -5,7 +5,7 @@ document.getElementById("loginForm").addEventListener("submit", async function (
   const password = document.getElementById("password").value.trim();
 
   try {
-    const res = await fetch("http://localhost:3000/api/auth/login", {
+    const res = await fetch("https://blood-bank-8szc.onrender.com/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ user_name, password })
