@@ -5,7 +5,7 @@ function getAuthToken() {
     return localStorage.getItem('authToken');
 }
 
-export async function submitStudentRegistration() {
+async function submitStudentRegistration() {
     const name = document.getElementById("s_name").value;
     const age = parseInt(document.getElementById("s_age").value, 10);
     const id = document.getElementById("s_id").value.trim();
@@ -85,3 +85,4 @@ export async function submitStudentRegistration() {
         alert("Error: " + error.message);
     }
 }
+window.submitStudentRegistration = submitStudentRegistration;
