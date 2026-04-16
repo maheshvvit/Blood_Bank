@@ -1,58 +1,51 @@
-const { pool } = require("../config/database");
+const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-class User {
+const userSchema = new mongoose.Schema({
+  user_name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+});
 
-  static async create({ user_name, email, password }) {
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+userSchema.statics.create = async function({ user_name, email, password }) {
+  const salt = await bcrypt.genSalt(10);
+  const hashedPassword = await bcrypt.hash(password, salt);
+  const user = new this({ user_name, email, password: hashedPassword });
+  await user.save();
+  return user._id;
+};
 
-    // Insert user into database
-    const [result] = await pool.execute(
-      "INSERT INTO users (user_name, email, password) VALUES (?, ?, ?)",
-      [user_name, email, hashedPassword]
-    );
+userSchema.statics.findByUsername = async function(username) {
+  const user = await this.findOne({ user_name: username });
+  if (!user) return null;
+  return { ...user.toObject(), id: user._id };
+};
 
-    return result.insertId;
+userSchema.statics.findByEmail = async function(email) {
+  const user = await this.findOne({ email });
+  if (!user) return null;
+  return { ...user.toObject(), id: user._id };
+};
+
+userSchema.statics.comparePassword = async function(plain, hash) {
+  return await bcrypt.compare(plain, hash);
+};
+
+userSchema.statics.generateToken = function(user) {
+  return jwt.sign(
+    { id: user.id || user._id, user_name: user.user_name },
+    process.env.JWT_SECRET || "secret123",
+    { expiresIn: "1d" }
+  );
+};
+
+userSchema.statics.verifyToken = function(token) {
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET || "secret123");
+  } catch (err) {
+    return null;
   }
+};
 
-  static async findByUsername(username) {
-    const [rows] = await pool.execute(
-      "SELECT * FROM users WHERE user_name = ?",
-      [username]
-    );
-    return rows[0];
-  }
-
-  static async findByEmail(email) {
-    const [rows] = await pool.execute(
-      "SELECT * FROM users WHERE email = ?",
-      [email]
-    );
-    return rows[0];
-  }
-
-  static async comparePassword(plain, hash) {
-    return await bcrypt.compare(plain, hash);
-  }
-
-  static generateToken(user) {
-    return jwt.sign(
-      { id: user.id, user_name: user.user_name },
-      process.env.JWT_SECRET || "secret123",
-      { expiresIn: "1d" }
-    );
-  }
-
-  static verifyToken(token) {
-    try {
-      return jwt.verify(token, process.env.JWT_SECRET || "secret123");
-    } catch (err) {
-      return null;
-    }
-  }
-}
-
-module.exports = User;
+module.exports = mongoose.model("User", userSchema);

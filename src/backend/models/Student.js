@@ -1,94 +1,68 @@
-const { pool } = require('../config/database');
+const mongoose = require("mongoose");
 
-class Student {
-    static async create(studentData) {
-        const {
-            s_id, s_name, s_age, s_email,
-            s_phone_no, s_deparment, s_year, s_blood_group
-        } = studentData;
-        
-        const [result] = await pool.execute(
-            `INSERT INTO students 
-            (s_id, s_name, s_age, s_email, s_phone_no, s_deparment, s_year, s_blood_group) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [s_id, s_name, s_age, s_email, s_phone_no, s_deparment, s_year, s_blood_group]
-        );
-        
-        return { id: result.insertId, ...studentData };
-    }
-    
-    static async findAll() {
-        const [rows] = await pool.execute('SELECT * FROM students ORDER BY created_at DESC');
-        return rows;
-    }
-    
-    static async findByBloodGroup(bloodGroup) {
-        const [rows] = await pool.execute(
-            'SELECT * FROM students WHERE s_blood_group = ? ORDER BY s_name',
-            [bloodGroup]
-        );
-        return rows;
-    }
-    
-    static async findById(studentId) {
-        const [rows] = await pool.execute(
-            'SELECT * FROM students WHERE s_id = ?',
-            [studentId]
-        );
-        return rows[0];
-    }
-    
-    static async update(studentId, studentData) {
-        const {
-            s_name, s_age, s_email,
-            s_phone_no, s_deparment, s_year, s_blood_group
-        } = studentData;
-        
-        const [result] = await pool.execute(
-            `UPDATE students SET 
-            s_name = ?, s_age = ?, s_email = ?, s_phone_no = ?,
-            s_deparment = ?, s_year = ?, s_blood_group = ?
-            WHERE s_id = ?`,
-            [s_name, s_age, s_email, s_phone_no, s_deparment, s_year, s_blood_group, studentId]
-        );
-        
-        return result.affectedRows > 0;
-    }
-    
-    static async delete(studentId) {
-        const [result] = await pool.execute(
-            'DELETE FROM students WHERE s_id = ?',
-            [studentId]
-        );
-        return result.affectedRows > 0;
-    }
-    
-    static async getStats() {
-        // Blood group statistics
-        const [bloodStats] = await pool.execute(
-            'SELECT s_blood_group, COUNT(*) as count FROM students GROUP BY s_blood_group'
-        );
-        
-        // Department statistics
-        const [deptStats] = await pool.execute(
-            'SELECT s_deparment, COUNT(*) as count FROM students GROUP BY s_deparment'
-        );
-        
-        // Year statistics
-        const [yearStats] = await pool.execute(
-            'SELECT s_year, COUNT(*) as count FROM students GROUP BY s_year'
-        );
-        
-        // Total count
-        const [[{ total }]] = await pool.execute('SELECT COUNT(*) as total FROM students');
-        
-        return {
-            total,
-            bloodStats,
-            deptStats,
-            yearStats
-        };
-    }
-}
+const studentSchema = new mongoose.Schema({
+  s_id: { type: String, required: true, unique: true },
+  s_name: { type: String, required: true },
+  s_age: { type: Number },
+  s_email: { type: String, required: true },
+  s_phone_no: { type: String, required: true },
+  s_deparment: { type: String },
+  s_year: { type: String },
+  s_blood_group: { type: String },
+  created_at: { type: Date, default: Date.now }
+});
 
-module.exports = Student;
+studentSchema.statics.create = async function(studentData) {
+  const student = new this(studentData);
+  await student.save();
+  return { id: student._id.toString(), ...student.toObject() };
+};
+
+studentSchema.statics.findAll = async function() {
+  const students = await this.find().sort({ created_at: -1 });
+  return students.map(s => ({ ...s.toObject(), id: s._id.toString() }));
+};
+
+studentSchema.statics.findByBloodGroup = async function(bloodGroup) {
+  const students = await this.find({ s_blood_group: bloodGroup }).sort({ s_name: 1 });
+  return students.map(s => ({ ...s.toObject(), id: s._id.toString() }));
+};
+
+studentSchema.statics.findById = async function(studentId) {
+  const student = await this.findOne({ s_id: studentId });
+  if (!student) return null;
+  return { ...student.toObject(), id: student._id.toString() };
+};
+
+studentSchema.statics.update = async function(studentId, studentData) {
+  const result = await this.updateOne({ s_id: studentId }, { $set: studentData });
+  return result.modifiedCount > 0 || result.matchedCount > 0;
+};
+
+studentSchema.statics.delete = async function(studentId) {
+  const result = await this.deleteOne({ s_id: studentId });
+  return result.deletedCount > 0;
+};
+
+studentSchema.statics.getStats = async function() {
+  const total = await this.countDocuments();
+  
+  const bloodStats = await this.aggregate([
+    { $group: { _id: "$s_blood_group", count: { $sum: 1 } } },
+    { $project: { s_blood_group: "$_id", count: 1, _id: 0 } }
+  ]);
+  
+  const deptStats = await this.aggregate([
+    { $group: { _id: "$s_deparment", count: { $sum: 1 } } },
+    { $project: { s_deparment: "$_id", count: 1, _id: 0 } }
+  ]);
+  
+  const yearStats = await this.aggregate([
+    { $group: { _id: "$s_year", count: { $sum: 1 } } },
+    { $project: { s_year: "$_id", count: 1, _id: 0 } }
+  ]);
+  
+  return { total, bloodStats, deptStats, yearStats };
+};
+
+module.exports = mongoose.model("Student", studentSchema);

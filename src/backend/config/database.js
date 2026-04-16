@@ -1,24 +1,14 @@
-const mysql = require("mysql2/promise");
+const mongoose = require("mongoose");
 require("dotenv").config();
-
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "n@ni8888",
-  database: process.env.DB_NAME || "neelesh",
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0,
-});
 
 async function testConnection() {
   try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL Connected Successfully");
-    conn.release();
+    const uri = process.env.MONGO_URI || "mongodb://localhost:27017/blood_bank_db";
+    await mongoose.connect(uri);
+    console.log("✅ MongoDB Connected Successfully");
   } catch (err) {
-    console.error("❌ MySQL Connection Failed:", err.message);
+    console.error("❌ MongoDB Connection Failed:", err.message);
   }
 }
 
-module.exports = { pool, testConnection };
+module.exports = { testConnection };

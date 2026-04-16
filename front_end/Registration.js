@@ -16,11 +16,13 @@ export async function submitStudentRegistration() {
     const bloodGroup = document.getElementById("s_blood_group").value;
 
     if (!email.includes("@gmail.com")) {
+        alert("The Email is Invalid. Please enter a valid Gmail address.");
         console.error("The Email is Invalid. Please enter a valid Gmail address.");
         return;
     }
 
     if (!bloodGroup) {
+        alert("Please select a blood group.");
         console.error("Please select a blood group.");
         return;
     }
@@ -54,7 +56,11 @@ export async function submitStudentRegistration() {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || 'Registration failed');
+            let errorMsg = data.message || 'Registration failed';
+            if (data.errors && data.errors.length > 0) {
+                errorMsg = data.errors.map(e => e.msg).join('\n');
+            }
+            throw new Error(errorMsg);
         }
 
         // Clear form
@@ -66,8 +72,9 @@ export async function submitStudentRegistration() {
         document.getElementById("s_deparment").value = "";
         document.getElementById("s_year").value = "";
         document.getElementById("s_blood_group").value = "";
-        document.getElementById("bloodGroupDropdown").textContent = "Select Blood Group";
+        document.getElementById("bloodGroupDropdown").innerHTML = '<i class="fas fa-caret-down"></i> Select Blood Group';
         
+        alert("Success! Student registered successfully.");
         console.log(data.message || "Student registered successfully!");
         
         // Trigger dashboard update
@@ -75,6 +82,6 @@ export async function submitStudentRegistration() {
         
     } catch (error) {
         console.error('Error registering student:', error);
-        console.error(error.message || "Registration failed. Please try again.");
+        alert("Error: " + error.message);
     }
 }
