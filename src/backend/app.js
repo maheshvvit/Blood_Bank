@@ -12,11 +12,11 @@ app.use(express.json());
 testConnection();   // ✅ VERY IMPORTANT
 
 // Serve static files from front_end directory
-app.use(express.static(path.join(__dirname, '../../front_end')));
+app.use(express.static(path.resolve(__dirname, '../../front_end')));
 
 // Root route - serve login page
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../../front_end/login page.html'));
+    res.sendFile(path.resolve(__dirname, '../../front_end/login-page.html'));
 });
 
 // API routes
@@ -42,5 +42,5 @@ app.use((err, req, res, next) => {
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
